@@ -1,0 +1,44 @@
+# Compiled output
+/dist
+/build
+
+# Node dependencies
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment and sensitive files
+.env
+.env.*
+!.env.example
+
+# Testing & Coverage
+/coverage
+*.lcov
+.nyc_output
+
+# Logs and runtime data
+logs
+*.log
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# Python & Temporary performance testing artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.zip
+.pytest_cache/

@@ -1,0 +1,89 @@
+name: NestJS_Auth_Performance_Test
+
+servers:
+  - name: nest_api
+    host: fluffy-sites-mate.loca.lt
+    port: 443
+    scheme: https
+
+variables:
+  - random_number:
+      name: user_id_rand
+      min: 100000
+      max: 999999
+      change_policy: each_iteration
+
+user_paths:
+  - name: User_Registration_Login_Flow
+    actions:
+      steps:
+        - transaction:
+            name: TX_01_Register
+            steps:
+              - request:
+                  server: nest_api
+                  url: /api/v1/auth/register
+                  method: POST
+                  headers:
+                    - name: Content-Type
+                      value: application/json
+                    - name: Bypass-Tunnel-Reminder
+                      value: "true"
+                  body: |
+                    {
+                      "email": "loaduser_${user_id_rand}@testload.internal",
+                      "pass": "Secret@12345"
+                    }
+        - think_time: 500ms
+
+        - transaction:
+            name: TX_02_Login
+            steps:
+              - request:
+                  server: nest_api
+                  url: /api/v1/auth/login
+                  method: POST
+                  headers:
+                    - name: Content-Type
+                      value: application/json
+                    - name: Bypass-Tunnel-Reminder
+                      value: "true"
+                  body: |
+                    {
+                      "email": "loaduser_${user_id_rand}@testload.internal",
+                      "pass": "Secret@12345"
+                    }
+                  extractors:
+                    - name: extracted_jwt
+                      jsonpath: $.accessToken
+        - think_time: 500ms
+
+        - transaction:
+            name: TX_03_Profile
+            steps:
+              - request:
+                  server: nest_api
+                  url: /api/v1/auth/profile
+                  method: POST
+                  headers:
+                    - name: Content-Type
+                      value: application/json
+                    - name: Bypass-Tunnel-Reminder
+                      value: "true"
+                    - name: Authorization
+                      value: "Bearer ${extracted_jwt}"
+                  body: "{}"
+
+populations:
+  - name: AuthPop
+    user_paths:
+      - name: User_Registration_Login_Flow
+
+scenarios:
+  - name: Local_Ramp_Test
+    populations:
+      - name: AuthPop
+        constant_load:
+          users: 5
+          rampup: 10s
+          duration: 30s
