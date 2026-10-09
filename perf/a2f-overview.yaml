@@ -1,0 +1,90 @@
+name: Data_Collection_A2F_Overview_Test
+
+# Target server (Public IP & Port)
+servers:
+  - name: dashboard_server
+    host: 13.50.253.205
+    port: 8092
+    scheme: http
+
+user_paths:
+  - name: Login_And_Navigate_To_A2F_Overview
+    actions:
+      steps:
+        # Step 1: Fetch CSRF Token
+        - transaction:
+            name: TX_01_Get_CSRF
+            steps:
+              - request:
+                  server: dashboard_server
+                  url: /api/auth/csrf
+                  method: GET
+                  extractors:
+                    - name: extracted_csrf
+                      jsonpath: $.csrfToken
+
+        - think_time: 500ms
+
+        # Step 2: Submit Credentials & Establish Session
+        - transaction:
+            name: TX_02_Login
+            steps:
+              - request:
+                  server: dashboard_server
+                  url: /api/auth/callback/credentials
+                  method: POST
+                  headers:
+                    - name: Content-Type
+                      value: application/x-www-form-urlencoded
+                  body: "username=bigarment1990%40gmail.com&password=Admin%40123&csrfToken=${extracted_csrf}&callbackUrl=http%3A%2F%2F13.50.253.205%3A8092%2Fauth%2Fsignin"
+                  followRedirects: false
+
+        - think_time: 1s
+
+        # Step 3: Land on Main Dashboard
+        - transaction:
+            name: TX_03_Load_Main_Dashboard
+            steps:
+              - request:
+                  server: dashboard_server
+                  url: /dashboard
+                  method: GET
+
+        - think_time: 2s
+
+        # Step 4: Navigate to A2F-setting Overview Page
+        - transaction:
+            name: TX_04_Navigate_To_A2F_Overview
+            steps:
+              - request:
+                  server: dashboard_server
+                  url: /dashboard/A2F-setting/overview
+                  method: GET
+                  headers:
+                    - name: Accept
+                      value: text/html,application/xhtml+xml
+
+        - think_time: 2s
+
+        # Step 5: Verify Active Session
+        - transaction:
+            name: TX_05_Verify_Session
+            steps:
+              - request:
+                  server: dashboard_server
+                  url: /api/auth/session
+                  method: GET
+
+populations:
+  - name: A2F_Users
+    user_paths:
+      - name: Login_And_Navigate_To_A2F_Overview
+
+scenarios:
+  - name: A2F_Overview_Load_Test
+    populations:
+      - name: A2F_Users
+        constant_load:
+          users: 45
+          rampup: 25s
+          duration: 5m

@@ -1,0 +1,55 @@
+name: NeoLoad Performance Testing CI/CD
+
+on:
+  push:
+    branches: [ master, main, PerformanceLogin ]
+  pull_request:
+    branches: [ master, main, PerformanceLogin ]
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  performance-test:
+    name: Run NeoLoad Cloud Performance Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install NeoLoad CLI
+        run: |
+          python -m pip install --upgrade pip
+          pip install neoload
+
+      - name: Authenticate with NeoLoad Web
+        env:
+          NLW_TOKEN: ${{ secrets.NLW_TOKEN }}
+        run: |
+          python -m neoload login --url https://neoload-api.saas.neotys.com/ "$NLW_TOKEN"
+          python -m neoload status
+
+      - name: Validate As-Code YAML
+        run: |
+          python -m neoload validate perf/a2f-overview.yaml
+
+      - name: Configure and Upload Test Project
+        run: |
+          # Ensure test setting exists in NeoLoad Web
+          python -m neoload test-settings --zone EUGAWS --lgs 1 createorpatch Data_Dashboard_Test
+          
+          # Upload latest test definition
+          python -m neoload project --path perf/a2f-overview.yaml upload Data_Dashboard_Test
+
+      - name: Execute NeoLoad Performance Test
+        run: |
+          python -m neoload run --scenario A2F_Overview_Load_Test
+
+      - name: Output Test Summary
+        if: always()
+        run: |
+          python -m neoload test-results summary
