@@ -85,6 +85,6 @@ scenarios:
     populations:
       - name: A2F_Users
         constant_load:
-          users: 5
-          rampup: 10s
+          users: 15
+          rampup: 15s
           duration: 1m
