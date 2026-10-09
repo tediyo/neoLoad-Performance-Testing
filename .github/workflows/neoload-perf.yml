@@ -20,7 +20,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: Install NeoLoad CLI
         run: |
@@ -31,26 +30,26 @@ jobs:
         env:
           NLW_TOKEN: ${{ secrets.NLW_TOKEN }}
         run: |
-          neoload login --url https://neoload-api.saas.neotys.com/ "$NLW_TOKEN"
-          neoload status
+          python -m neoload login --url https://neoload-api.saas.neotys.com/ "$NLW_TOKEN"
+          python -m neoload status
 
       - name: Validate As-Code YAML
         run: |
-          neoload validate perf/a2f-overview.yaml
+          python -m neoload validate perf/a2f-overview.yaml
 
       - name: Configure and Upload Test Project
         run: |
           # Ensure test setting exists in NeoLoad Web
-          neoload test-settings --zone EUGAWS --lgs 1 createorpatch Data_Dashboard_Test
+          python -m neoload test-settings --zone EUGAWS --lgs 1 createorpatch Data_Dashboard_Test
           
           # Upload latest test definition
-          neoload project --path perf/a2f-overview.yaml upload Data_Dashboard_Test
+          python -m neoload project --path perf/a2f-overview.yaml upload Data_Dashboard_Test
 
       - name: Execute NeoLoad Performance Test
         run: |
-          neoload run --scenario A2F_Overview_Load_Test
+          python -m neoload run --scenario A2F_Overview_Load_Test
 
       - name: Output Test Summary
         if: always()
         run: |
-          neoload test-results summary
+          python -m neoload test-results summary
